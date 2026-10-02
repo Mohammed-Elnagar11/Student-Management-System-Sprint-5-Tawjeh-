@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Student_Management_System__Sprint_5_Tawjeh_.Data;
 using Student_Management_System__Sprint_5_Tawjeh_.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 {
@@ -49,6 +46,7 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
                 .AsNoTracking()
                 .Where(e => e.CourseId == courseId)
                 .Select(e => e.Student)
+                .Where(s => s != null)
                 .ToListAsync();
         }
 
@@ -56,7 +54,6 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
         {
             var rows = await context.Enrollments
                 .AsNoTracking()
-                .Include(e => e.Course)
                 .Where(e => e.StudentId == studentId)
                 .Select(e => new { e.Course, e.Grade })
                 .ToListAsync();
@@ -66,10 +63,13 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 
         public async Task<double?> GetAverageGradeForCourseAsync(int courseId)
         {
-            return await context.Enrollments
+            var grades = await context.Enrollments
                 .AsNoTracking()
                 .Where(e => e.CourseId == courseId && e.Grade.HasValue)
-                .AverageAsync(e => (double?)e.Grade);
+                .Select(e => (double)e.Grade!.Value)
+                .ToListAsync();
+
+            return grades.Count == 0 ? null : grades.Average();
         }
 
         // UPDATE

@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Student_Management_System__Sprint_5_Tawjeh_.Data;
 using Student_Management_System__Sprint_5_Tawjeh_.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 {
@@ -84,8 +81,6 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
         // SOFT DELETE (Bonus)
         public async Task<bool> SoftDeleteStudentAsync(int studentId)
         {
-            // IgnoreQueryFilters needed here: the student might already appear deleted
-            // OR we just look them up normally (still active at this point)
             var student = await context.Students
                 .FirstOrDefaultAsync(s => s.Id == studentId);
             if (student is null) return false;

@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Student_Management_System__Sprint_5_Tawjeh_.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Data.Configurations
 {
@@ -11,6 +8,8 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Student> builder)
         {
+            builder.HasKey (s => s.Id);
+
             builder.Property(s => s.FullName)
             .IsRequired()
             .HasMaxLength(150);

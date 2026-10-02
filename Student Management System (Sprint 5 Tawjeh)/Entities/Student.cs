@@ -1,17 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Entities
 {
     internal class Student
     {
-        [Key]
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
-        [EmailAddress]
         public string Email { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
         public DateTime EnrollmentDate { get; set; }

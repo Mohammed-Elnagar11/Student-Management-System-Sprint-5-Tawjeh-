@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Student_Management_System__Sprint_5_Tawjeh_.Data;
 using Student_Management_System__Sprint_5_Tawjeh_.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 {
@@ -53,7 +50,7 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 
             course.Title = title;
             course.Credits = credits;
-            course.Description = description;
+            course.Description = description ?? string.Empty;
 
             await context.SaveChangesAsync();
             return course;
