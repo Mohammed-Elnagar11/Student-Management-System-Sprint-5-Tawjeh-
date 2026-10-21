@@ -29,6 +29,7 @@ Accept: application/json
 ###
 
 ### 1.5 POST /api/students — Success: 201 Created (Create new student)
+# Note: First run returns 201 (Created). Running it again returns 409 Conflict (duplicate email).
 POST {{baseUrl}}/api/students
 Content-Type: application/json
 
@@ -172,25 +173,32 @@ DELETE {{baseUrl}}/api/courses/999
 
 ###
 
-### 2.7 GET /api/courses/{id}/students — Success: 200 OK (Students enrolled in course)
+### 2.7 DELETE /api/courses/{id} — Success: 204 No Content (Delete course that has NO enrollments, e.g. newly created Course 5)
+# Note: First run returns 204 (No Content). Running again returns 404 (already deleted).
+DELETE {{baseUrl}}/api/courses/5
+
+
+###
+
+### 2.8 GET /api/courses/{id}/students — Success: 200 OK (Students enrolled in course)
 GET {{baseUrl}}/api/courses/1/students
 Accept: application/json
 
 ###
 
-### 2.8 GET /api/courses/{id}/students — Failure: 404 Not Found (Course not found)
+### 2.9 GET /api/courses/{id}/students — Failure: 404 Not Found (Course not found)
 GET {{baseUrl}}/api/courses/999/students
 Accept: application/json
 
 ###
 
-### 2.9 GET /api/courses/{id}/average-grade — Success: 200 OK (Average grade ignoring null grades)
+### 2.10 GET /api/courses/{id}/average-grade — Success: 200 OK (Average grade ignoring null grades)
 GET {{baseUrl}}/api/courses/2/average-grade
 Accept: application/json
 
 ###
 
-### 2.10 GET /api/courses/{id}/average-grade — Failure: 404 Not Found (Course not found)
+### 2.11 GET /api/courses/{id}/average-grade — Failure: 404 Not Found (Course not found)
 GET {{baseUrl}}/api/courses/999/average-grade
 Accept: application/json
 
