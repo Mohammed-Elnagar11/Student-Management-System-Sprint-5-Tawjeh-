@@ -4,7 +4,7 @@ using Student_Management_System__Sprint_5_Tawjeh_.Entities;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Data.Configurations
 {
-    internal class StudentConfiguration : IEntityTypeConfiguration<Student>
+    public class StudentConfiguration : IEntityTypeConfiguration<Student>
     {
         public void Configure(EntityTypeBuilder<Student> builder)
         {
@@ -30,8 +30,6 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Data.Configurations
             builder.Property(s => s.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
-
-            builder.HasQueryFilter(s => !s.IsDeleted);
 
             builder.HasMany(s => s.Enrollments)
                 .WithOne(e => e.Student)

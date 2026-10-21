@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Entities
 {
-    internal class Student
+    public class Student
     {
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;

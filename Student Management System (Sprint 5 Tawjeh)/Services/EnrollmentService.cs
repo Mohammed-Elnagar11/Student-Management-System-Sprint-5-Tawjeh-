@@ -1,10 +1,25 @@
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Student_Management_System__Sprint_5_Tawjeh_.Data;
 using Student_Management_System__Sprint_5_Tawjeh_.Entities;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Services
 {
-    internal class EnrollmentService
+    public enum EnrollmentStatus
+    {
+        Success,
+        NotFound,
+        Duplicate
+    }
+
+    public class EnrollmentCreateResult
+    {
+        public EnrollmentStatus Status { get; set; }
+        public string? Message { get; set; }
+        public Enrollment? Enrollment { get; set; }
+    }
+
+    public class EnrollmentService
     {
         private readonly AppDbContext context;
 
@@ -13,85 +28,77 @@ namespace Student_Management_System__Sprint_5_Tawjeh_.Services
             this.context = context;
         }
 
-        // CREATE
-        public async Task<Enrollment> AddEnrollmentAsync(Enrollment enrollment)
+        public async Task<bool> StudentExistsAsync(int studentId)
         {
-            context.Enrollments.Add(enrollment);
-            await context.SaveChangesAsync();
-            return enrollment;
+            return await context.Students
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == studentId);
         }
 
-        // READ
-        public async Task<Enrollment?> GetEnrollmentByIdAsync(int enrollmentId)
+        public async Task<bool> CourseExistsAsync(int courseId)
+        {
+            return await context.Courses
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == courseId);
+        }
+
+        public async Task<bool> EnrollmentExistsAsync(int studentId, int courseId)
         {
             return await context.Enrollments
                 .AsNoTracking()
-                .Include(e => e.Student)
-                .Include(e => e.Course)
-                .FirstOrDefaultAsync(e => e.Id == enrollmentId);
+                .AnyAsync(e => e.StudentId == studentId && e.CourseId == courseId);
         }
 
-        public async Task<List<Enrollment>> GetAllEnrollmentsAsync()
+        public async Task<EnrollmentCreateResult> AddEnrollmentAsync(Enrollment enrollment)
         {
-            return await context.Enrollments
-                .AsNoTracking()
-                .Include(e => e.Student)
-                .Include(e => e.Course)
-                .ToListAsync();
-        }
+            var studentExists = await StudentExistsAsync(enrollment.StudentId);
+            if (!studentExists)
+            {
+                return new EnrollmentCreateResult
+                {
+                    Status = EnrollmentStatus.NotFound,
+                    Message = $"Student with ID {enrollment.StudentId} does not exist."
+                };
+            }
 
-        public async Task<List<Student>> GetStudentsInCourseAsync(int courseId)
-        {
-            return await context.Enrollments
-                .AsNoTracking()
-                .Where(e => e.CourseId == courseId)
-                .Select(e => e.Student)
-                .Where(s => s != null)
-                .ToListAsync();
-        }
+            var courseExists = await CourseExistsAsync(enrollment.CourseId);
+            if (!courseExists)
+            {
+                return new EnrollmentCreateResult
+                {
+                    Status = EnrollmentStatus.NotFound,
+                    Message = $"Course with ID {enrollment.CourseId} does not exist."
+                };
+            }
 
-        public async Task<List<(Course Course, int? Grade)>> GetCoursesForStudentAsync(int studentId)
-        {
-            var rows = await context.Enrollments
-                .AsNoTracking()
-                .Where(e => e.StudentId == studentId)
-                .Select(e => new { e.Course, e.Grade })
-                .ToListAsync();
+            var isDuplicate = await EnrollmentExistsAsync(enrollment.StudentId, enrollment.CourseId);
+            if (isDuplicate)
+            {
+                return new EnrollmentCreateResult
+                {
+                    Status = EnrollmentStatus.Duplicate,
+                    Message = $"Student {enrollment.StudentId} is already enrolled in Course {enrollment.CourseId}."
+                };
+            }
 
-            return rows.Select(x => (x.Course, x.Grade)).ToList();
-        }
-
-        public async Task<double?> GetAverageGradeForCourseAsync(int courseId)
-        {
-            var grades = await context.Enrollments
-                .AsNoTracking()
-                .Where(e => e.CourseId == courseId && e.Grade.HasValue)
-                .Select(e => (double)e.Grade!.Value)
-                .ToListAsync();
-
-            return grades.Count == 0 ? null : grades.Average();
-        }
-
-        // UPDATE
-        public async Task<Enrollment?> UpdateEnrollmentGradeAsync(int enrollmentId, int? grade)
-        {
-            var enrollment = await context.Enrollments.FirstOrDefaultAsync(e => e.Id == enrollmentId);
-            if (enrollment is null) return null;
-
-            enrollment.Grade = grade;
-            await context.SaveChangesAsync();
-            return enrollment;
-        }
-
-        // DELETE
-        public async Task<bool> DeleteEnrollmentAsync(int enrollmentId)
-        {
-            var enrollment = await context.Enrollments.FirstOrDefaultAsync(e => e.Id == enrollmentId);
-            if (enrollment is null) return false;
-
-            context.Enrollments.Remove(enrollment);
-            await context.SaveChangesAsync();
-            return true;
+            try
+            {
+                context.Enrollments.Add(enrollment);
+                await context.SaveChangesAsync();
+                return new EnrollmentCreateResult
+                {
+                    Status = EnrollmentStatus.Success,
+                    Enrollment = enrollment
+                };
+            }
+            catch (DbUpdateException)
+            {
+                return new EnrollmentCreateResult
+                {
+                    Status = EnrollmentStatus.Duplicate,
+                    Message = "A duplicate enrollment record already exists."
+                };
+            }
         }
     }
 }

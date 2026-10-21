@@ -4,7 +4,7 @@ using Student_Management_System__Sprint_5_Tawjeh_.Entities;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Data.Configurations
 {
-    internal class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
+    public class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
     {
         public void Configure(EntityTypeBuilder<Enrollment> builder)
         {

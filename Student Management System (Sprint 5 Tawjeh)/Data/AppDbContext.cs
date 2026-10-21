@@ -4,13 +4,19 @@ using Student_Management_System__Sprint_5_Tawjeh_.Entities;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Data
 {
-    internal class AppDbContext : DbContext
+    public class AppDbContext : DbContext
     {
+        public AppDbContext() { }
+
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=DESKTOP-C6238S4\\SQLEXPRESS;Database=StudentSystemDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true;");
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=DESKTOP-C6238S4\\SQLEXPRESS;Database=StudentSystemDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true;");
+            }
         }
-        // public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<Student> Students { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Instructor> Instructors { get; set; }

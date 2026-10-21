@@ -1,88 +1,61 @@
 using System;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Student_Management_System__Sprint_5_Tawjeh_.Data;
+using Student_Management_System__Sprint_5_Tawjeh_.Middleware;
 using Student_Management_System__Sprint_5_Tawjeh_.Services;
 
-namespace Student_Management_System__Sprint_5_Tawjeh_
+var builder = WebApplication.CreateBuilder(args);
+
+// Controllers & JSON configuration
+builder.Services.AddControllers();
+
+// ProblemDetails configuration for RFC 7807 standard error responses
+builder.Services.AddProblemDetails(options =>
 {
-    internal class Program
+    options.CustomizeProblemDetails = context =>
     {
-        static async Task Main(string[] args)
-        {
-            using var context = new AppDbContext();
-            
-            var studentService = new StudentService(context);
-            var courseService = new CourseService(context);
-            var enrollmentService = new EnrollmentService(context);
+        // Ensure no stack trace or sensitive exception details leak into the JSON response
+        context.ProblemDetails.Extensions.Remove("exception");
+        context.ProblemDetails.Extensions.Remove("stackTrace");
+        context.ProblemDetails.Extensions.Remove("trace");
+    };
+});
 
-            Console.WriteLine("--- Student Management System ---");
-            Console.WriteLine();
+// DbContext registration with Scoped lifetime
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Server=DESKTOP-C6238S4\\SQLEXPRESS;Database=StudentSystemDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true;";
+    options.UseSqlServer(connectionString);
+});
 
-            // Search for a student
-            Console.WriteLine("1. Search Student by Name ('Ali'):");
-            var searchResults = await studentService.SearchStudentsByNameAsync("Ali");
-            foreach (var s in searchResults)
-            {
-                Console.WriteLine($"- Found: {s.FullName} ({s.Email})");
-            }
-            Console.WriteLine();
+// Dependency Injection: Register the 3 domain services with Scoped lifetime
+builder.Services.AddScoped<StudentService>();
+builder.Services.AddScoped<CourseService>();
+builder.Services.AddScoped<EnrollmentService>();
 
-            // Get Student with Enrollments (Testing Include)
-            Console.WriteLine("2. Get Student with Enrollments (Student ID: 1):");
-            var studentWithEnrollments = await studentService.GetStudentWithEnrollmentsAsync(1);
-            if (studentWithEnrollments != null)
-            {
-                Console.WriteLine($"Student: {studentWithEnrollments.FullName}");
-                foreach (var e in studentWithEnrollments.Enrollments)
-                {
-                    Console.WriteLine($"  - Enrolled in: {e.Course.Title}, Grade: {e.Grade?.ToString() ?? "N/A"}");
-                }
-            }
-            Console.WriteLine();
+var app = builder.Build();
 
-            // Get Students in a Course
-            Console.WriteLine("3. Get Students in Course ID 1:");
-            var studentsInCourse = await enrollmentService.GetStudentsInCourseAsync(1);
-            foreach (var s in studentsInCourse)
-            {
-                Console.WriteLine($"  - {s.FullName}");
-            }
-            Console.WriteLine();
+// 1. Error Handling Middleware: handles unhandled exceptions and returns JSON 500 without stack trace
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
-            // Get Average Grade for a Course
-            Console.WriteLine("4. Get Average Grade for Course ID 2:");
-            var avgGrade = await enrollmentService.GetAverageGradeForCourseAsync(2);
-            Console.WriteLine($"  - Average Grade: {avgGrade?.ToString("F2") ?? "No grades yet"}");
-            Console.WriteLine();
+// 2. Custom Request Logging Middleware: logs HTTP method and path for every request
+app.UseRequestLogging();
 
-            // Test Soft Delete
-            Console.WriteLine("5. Testing Soft Delete on Student ID 4 (Nour Hassan):");
-            var softDeleteSuccess = await studentService.SoftDeleteStudentAsync(4);
-            Console.WriteLine($"  - Soft Delete Successful: {softDeleteSuccess}");
-            
-            Console.WriteLine("  - Fetching Deleted Students:");
-            var deletedStudents = await studentService.GetDeletedStudentsAsync();
-            foreach (var ds in deletedStudents)
-            {
-                Console.WriteLine($"    - Deleted: {ds.FullName}");
-            }
-            Console.WriteLine();
+app.UseRouting();
 
-            // Test Restrict Delete Behavior on Course
-            Console.WriteLine("6. Testing Restrict Delete Behavior on Course ID 1 (Has Enrollments):");
-            try
-            {
-                await courseService.DeleteCourseAsync(1);
-                Console.WriteLine("  - Course deleted successfully (This should not happen).");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"  - Delete failed as expected due to Restrict behavior.");
-                Console.WriteLine($"  - Error: {ex.InnerException?.Message ?? ex.Message}");
-            }
+// Endpoint for testing 500 ProblemDetails error handling without stack trace
+app.MapGet("/api/test-error", () =>
+{
+    throw new InvalidOperationException("This is a simulated unexpected server error.");
+});
 
-            Console.WriteLine();
-            Console.WriteLine("Testing complete.");
-        }
-    }
-}
+app.MapControllers();
+
+app.Run();

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Entities
 {
-    internal class Course
+    public class Course
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;

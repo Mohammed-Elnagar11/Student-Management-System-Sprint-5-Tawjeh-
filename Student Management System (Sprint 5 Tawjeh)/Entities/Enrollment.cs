@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Student_Management_System__Sprint_5_Tawjeh_.Entities
 {
-    internal class Enrollment
+    public class Enrollment
     {
         [Key]
         public int Id { get; set; }
